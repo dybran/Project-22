@@ -1,2 +1,2 @@
 # Project-22
-DEPLOYING APPLICATIONS INTO KUBERNETES CLUSTER
+Deploying Application Into Kubernetes Cluster
