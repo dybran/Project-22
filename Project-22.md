@@ -53,6 +53,104 @@ Some setup options can combine both public and private cloud together. For examp
 
 ![](./images/arc.PNG)
 
+We will be using the Elastic Kubernates Service(EKS) for this project. To set up the EKS, we need to install WSL. To install WSL click [here](https://learn.microsoft.com/en-us/windows/wsl/install).
+
+OR
+
+Run the following to enable WSL
+
+`dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart`
+
+![](./images/b.PNG)
+
+Reboot your system.  
+
+After the reboot, open the Microsoft Store, search for your preferred Linux distribution (e.g., Ubuntu), and install it.
+
+![](./images/d.PNG)
+
+Complete the initial setup of the Linux distribution by creating a user and password.
+
+Update the ubuntu packages On the WSL
+
+`$ sudo apt update && sudo pat upgrade`
+
+![](./images/c.PNG)
+
+Download and install __eksctl__
+
+`$ curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp`
+
+Move to __/usr/local/bin__
+
+`$ sudo mv /tmp/eksctl /usr/local/bin`
+
+`$ eksctl version`
+
+![](./images/f.PNG)
+![](./images/f1.PNG)
+
+For the WSL to interact with the AWS we need to install __awscli__ and configure
+
+`$ sudo apt install awscli`
+
+`$ aws configure`
+
+
+Setup __kubectl__
+
+To setup kubectl we will refer to the [kubernetes documentation](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/#install-kubectl-binary-with-curl-on-linux).
+
+Install kubectl
+
+`$ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"`
+
+Make kubectl executable
+
+`$ sudo chmod +x kubectl`
+
+To make kubectl globally accessible
+
+`$ sudo mv kubectl /usr/local/bin/`
+
+Verify
+
+`$ kubectl version --client`
+
+![](./images/kkk.PNG)
+
+![](./images/g.PNG)
+![](./images/g1.PNG)
+
+To verify run any __aws__ command
+
+`$ aws s3 ls`
+
+Now, you have __eksctl__ installed on your Windows system through __WSL__. You can use it to interact with Amazon EKS clusters.
+
+```
+$ eksctl create cluster \
+  --name deploy \
+  --version 1.23 \
+  --region us-east-1 \
+  --nodegroup-name workers \
+  --node-type t2.micro \
+  --nodes 2
+```
+![](./images/ss.PNG)
+
+Configure kubectl
+
+After your cluster is created, you need to configure kubectl to connect to the cluster. Run the command
+
+`$ aws eks --region us-east-1 update-kubeconfig --name deploy`
+
+
+
+
+
+
+
 
 
 
