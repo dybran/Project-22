@@ -139,9 +139,9 @@ $ eksctl create cluster \
 ```
 ![](./images/ss.PNG)
 
-Configure kubectl
+__Configure kubectl__
 
-After your cluster is created, you need to configure kubectl to connect to the cluster. Run the command
+After the cluster is created, you need to configure kubectl to connect to the cluster. Run the command
 
 `$ aws eks --region us-east-1 update-kubeconfig --name deploy`
 
