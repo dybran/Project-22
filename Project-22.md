@@ -131,9 +131,9 @@ Now, you have __eksctl__ installed on your Windows system through __WSL__. You c
 ```
 $ eksctl create cluster \
   --name deploy \
-  --version 1.23 \
+  --version 1.26 \
   --region us-east-1 \
-  --nodegroup-name workers \
+  --nodegroup-name worker \
   --node-type t2.micro \
   --nodes 2
 ```
