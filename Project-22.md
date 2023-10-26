@@ -96,6 +96,12 @@ For the WSL to interact with the AWS we need to install __awscli__ and configure
 
 `$ aws configure`
 
+![](./images/g.PNG)
+![](./images/g1.PNG)
+
+To verify run any __aws__ command
+
+`$ aws s3 ls`
 
 Setup __kubectl__
 
@@ -105,33 +111,31 @@ Install kubectl
 
 `$ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"`
 
-Make kubectl executable
+Download the kubectl checksum file
 
-`$ sudo chmod +x kubectl`
+`$ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"`
 
-To make kubectl globally accessible
+Validate the kubectl binary against the checksum file
 
-`$ sudo mv kubectl /usr/local/bin/`
+`$ echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check`
+
+Install kubectl
+
+`$ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl`
 
 Verify
 
 `$ kubectl version --client`
 
 ![](./images/kkk.PNG)
+![](./images/kkk1.PNG)
 
-![](./images/g.PNG)
-![](./images/g1.PNG)
-
-To verify run any __aws__ command
-
-`$ aws s3 ls`
 
 Now, you have __eksctl__ installed on your Windows system through __WSL__. You can use it to interact with Amazon EKS clusters.
 
 ```
 $ eksctl create cluster \
   --name deploy \
-  --version 1.26 \
   --region us-east-1 \
   --nodegroup-name worker \
   --node-type t2.micro \
