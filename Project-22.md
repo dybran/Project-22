@@ -162,8 +162,138 @@ Then run to get nodes
 `$ kubectl get nodes`
 
 ![](./images/rew.PNG)
+![](./images/qsw.PNG)
+
+__Creating A Pod For The Nginx Application__
 
 
+Create nginx pod by applying the manifest file
+__nginx-pod.yml__ manifest file shown below
+
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels: 
+    app: nginx-pod
+spec:
+  containers:
+  - image: nginx:latest
+    name: nginx-pod
+    ports:
+    - containerPort: 80
+      protocol: TCP
+```
+Create the pods
+
+`$ kubectl apply -f nginx-pod.yml`
+
+We can access the pod using
+
+`$ kubectl get pod nginx-pod.yml`
+
+To access the information about the pod
+
+`$ kubectl describe pod nginx-pod.yml`
+
+![](./images/ngx.PNG)
+
+__ACCESSING THE APP FROM THE BROWSER__
+
+The primary objective of any solution is to enable access through either a web portal or an application, such as a mobile app. In our current setup, we have a Pod equipped with an Nginx container. However, this Pod can't be accessed directly from a web browser due to its unique IP address.
+
+To resolve this issue, we introduce another Kubernetes component known as a "Service." 
+
+A Service acts as an intermediary that receives requests and forwards them to the respective Pod's IP address.
+
+In essence, a Service acts as a gateway that accepts incoming requests on behalf of the Pods and routes them to the appropriate Pod's IP address. If you execute the provided command, you can obtain the IP address of the Pod. Nonetheless, it's important to note that there is no direct means of accessing this Pod from the external world.
+
+`$ kubectl get pod nginx-pod  -o wide`
+
+![](./images/vvv.PNG)
+
+__Expose a Service on a server’s public IP address & static port__
+
+Sometimes, it may be needed to directly access the application using the public IP of the server (when we speak of a K8s cluster we can replace ‘server’ with ‘node’) the Pod is running on. This is when the NodePort service type comes in handy.
+
+A Node port service type exposes the service on a static port on the node’s IP address. NodePorts are in the __30000-32767__ range by default, which means a NodePort is unlikely to match a service’s intended port (for example, 80 may be exposed as 30080).
+
+
+Create a Service - __nginx-svc.yml__ manifest file
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  type: NodePort
+  selector:
+    app: nginx-pod
+  ports:
+    - protocol: TCP
+      port: 80
+      nodePort: 30080
+```
+
+Cretae the service
+
+`$ kubectl apply -f nginx-svc.yml`
+
+We can access the svc using
+
+`$ kubectl get svc -o wide`
+
+To access the information about the service
+
+`$ kubectl describe svc nginx-svc.yml`
+
+![](./images/ssvvcc.PNG)
+
+To access the service,
+
+Allow the inbound traffic in your EC2’s Security Group to the NodePort range __30080__
+
+![](./images/wwweee.PNG)
+
+Access the nginx using the public IP address of the node the Pod is running on
+
+![](./images/111.PNG)
+
+The port number __30080__ designates the specific port associated with the node where the Pod is currently scheduled to operate. Should the Pod undergo rescheduling to a different node, it will retain this very port number on its new hosting node. Consequently, if you have multiple Pods concurrently running on diverse nodes, each of them will be accessible via their respective node IP addresses, all employing the same consistent port number.
+
+__CREATE A REPLICA SET__
+
+Let us create a __rs.yaml__ manifest for a ReplicaSet object
+
+```
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: nginx-rs
+  labels:
+    app: nginx-pod
+    tier: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      name: nginx-pod
+      labels:
+         app: nginx-pod
+         tier: frontend
+    spec:
+      containers:
+      - image: nginx:latest
+        name: nginx-pod
+        ports:
+        - containerPort: 80
+          protocol: TCP
+```
 
 
 
