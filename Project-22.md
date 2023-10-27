@@ -96,6 +96,14 @@ For the WSL to interact with the AWS we need to install __awscli__ and configure
 
 `$ aws configure`
 
+Install __pip__
+
+`$ sudo apt install python3-pip`
+
+Upgrade the __awscli__
+
+`$ pip install --upgrade awscli`
+
 ![](./images/g.PNG)
 ![](./images/g1.PNG)
 
@@ -149,11 +157,38 @@ After the cluster is created, you need to configure kubectl to connect to the cl
 
 `$ aws eks --region us-east-1 update-kubeconfig --name deploy`
 
+Then run to get nodes
+
+`$ kubectl get nodes`
+
+![](./images/rew.PNG)
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+__PROBLEMS ENCOUNTERED__
+
+Could not connect the kubectl to the EKS cluster using 
+
+`aws eks --region us-east-1 update-kubeconfig --name deploy`. 
+
+I had to upgrade __awscli__ to version __1.29__ using 
+
+`$ pip install --upgrade awscli`
 
 
 
