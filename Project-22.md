@@ -182,11 +182,11 @@ Then run to get nodes
 
 __PROBLEMS ENCOUNTERED__
 
-Could not connect the kubectl to the EKS cluster using 
+Could not connect to the kubernetes api server using
 
 `aws eks --region us-east-1 update-kubeconfig --name deploy`. 
 
-I had to upgrade __awscli__ to version __1.29__ using 
+I had to upgrade the __awscli__ to version __1.29__ using 
 
 `$ pip install --upgrade awscli`
 
