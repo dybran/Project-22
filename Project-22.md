@@ -501,7 +501,7 @@ spec:
       - name: nginx
         image: nginx:latest
         ports:
-        - containerPort: 8
+        - containerPort: 80
 ```
 
 Create the deployment
