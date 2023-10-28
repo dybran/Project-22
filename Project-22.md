@@ -626,6 +626,8 @@ Now, delete the only running Pod
 
 We will see that the replicaset creates another pod with a different pod ID.
 
+![](./images/)
+
 Refresh the web page
 
 ![](./images/ilk.PNG)
