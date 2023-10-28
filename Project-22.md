@@ -237,7 +237,7 @@ spec:
       nodePort: 30080
 ```
 
-Cretae the service
+Create the service
 
 `$ kubectl apply -f nginx-svc.yml`
 
@@ -247,7 +247,7 @@ We can access the svc using
 
 To access the information about the service
 
-`$ kubectl describe svc nginx-svc.yml`
+`$ kubectl describe svc nginx-service`
 
 ![](./images/ssvvcc.PNG)
 
@@ -263,9 +263,17 @@ Access the nginx using the public IP address of the node the Pod is running on
 
 The port number __30080__ designates the specific port associated with the node where the Pod is currently scheduled to operate. Should the Pod undergo rescheduling to a different node, it will retain this very port number on its new hosting node. Consequently, if you have multiple Pods concurrently running on diverse nodes, each of them will be accessible via their respective node IP addresses, all employing the same consistent port number.
 
+To delete the pod
+
+`$ kubectl delete nginx-pod`
+
+To delete the service
+
+`$ kubectl delete nginx-service`
+
 __CREATE A REPLICA SET__
 
-Let us create a __rs.yaml__ manifest for a ReplicaSet object
+Let us create a __rs.yml__ manifest for a ReplicaSet object
 
 ```
 apiVersion: apps/v1
@@ -294,25 +302,355 @@ spec:
         - containerPort: 80
           protocol: TCP
 ```
+![](./images/1q.PNG)
+
+The manifest file of ReplicaSet consist of the following fields
+
+- __apiVersion:__ This field specifies the version of kubernetes Api to which the object belongs. ReplicaSet belongs to apps/v1 apiVersion.
+- __kind:__ This field specify the type of object for which the manifest belongs to. Here, it is ReplicaSet.
+- __metadata:__ This field includes the metadata for the object. It mainly includes two fields: name and labels of the ReplicaSet.
+- __spec:__ This field specifies the label selector to be used to select the Pods, number of replicas of the Pod to be run and the container or list of containers which the Pod will run. In the above example, we are running 3 replicas of nginx container.
+
+Create the nginx replicaset
+
+`$ kubectl apply -f nginx-rs.yml`
+
+We can access the pods using
+
+`$ kubectl get pods`
+
+To access the information about the pods
+
+`$ kubectl describe pod <pod-id>`
+
+OR 
+
+`$ kubectl get pod <pod-id> -o yaml`
+
+![](./images/vv.PNG)
+
+Detailed information about the replicaset
+
+`$ kubectl get rs nginx-rs -o yaml`
+
+OR
+
+`$ kubectl get rs nginx-rs -o json`
+
+![](./images/111222.PNG)
+
+We can easily scale our ReplicaSet by specifying the desired number of replicas
+
+`$ kubectl scale rs nginx-rs --replicas=<number-of-pods>`
+
+![](./images/scale.PNG)
 
 
 
+__Advanced label matching__
+
+As Kubernetes mature as a technology, so does its features and improvements to k8s objects. __ReplicationControllers__ do not meet certain complex business requirements when it comes to using __selectors__. Imagine if you need to select Pods with multiple lables that represents things like
+
+- Application tier: such as Frontend, or Backend
+- Environment: such as Dev, SIT, QA, Preprod or Prod
+
+So far, we used a simple selector that just matches a key-value pair and check only __equality__
+
+```
+  selector:
+    app: nginx-pod
+```
+
+But in some cases, we want ReplicaSet to manage our existing containers that match certain criteria, we can use the same simple label matching or we can use some more complex conditions, such as:
+
+ - in
+ - not in
+ - not equal
+ - etc...
+Let us create the __rs.yml__ manifest file
+
+```
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata: 
+  name: nginx-rs
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      env: prod
+    matchExpressions:
+    - { key: tier, operator: In, values: [frontend] }
+  template:
+    metadata:
+      name: nginx
+      labels: 
+        env: prod
+        tier: frontend
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+          protocol: TCP
+```
+
+In the above spec file, under the selector, matchLabels and matchExpression are used to specify the key-value pair. The matchLabel works exactly the same way as the equality-based selector, and the matchExpression is used to specify the set based selectors. This feature is the main differentiator between ReplicaSet and previously mentioned obsolete ReplicationController.
+
+Create the replicaset
+
+`$ kubectl apply -f rs.yml`
+
+Get the replication set
+
+`$ kubectl get rs nginx-rs -o wide`
+
+![](./images/rs--.PNG)
+![](./images/rs-.PNG)
+
+__USING AWS LOAD BALANCER TO ACCESS YOUR SERVICE IN KUBERNETES.__
+
+We have previously interacted with the Nginx service using ClusterIP and NodeIP. However, there's yet another service type known as __LoadBalancer__. This particular service not only establishes a Service object within Kubernetes but also sets up an actual external Load Balancer, such as the Elastic Load Balancer (ELB) in AWS, if available.
+
+Create the service and ensure that the selector references the Pods in the replica set.
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  type: LoadBalancer
+  selector:
+    tier: frontend
+  ports:
+    - protocol: TCP
+      port: 80 # This is the port the Loadbalancer is listening at
+      targetPort: 80 # This is the port the container is listening at
+```
+
+Create the __nginxlb-svc.yml__
+
+`$ kubectl apply -f nginxlb-svc.yml`
+
+An ELB resource will be created in your AWS console
+
+![](./images/lbs3.PNG)
+
+A Kubernetes component in the control plane called __Cloud-controller-manager__ is responsible for triggering this action. It connects to your specific cloud provider’s (AWS) APIs and create resources such as Load balancers. It will ensure that the resource is appropriately tagged
+
+![](./images/555.PNG)
+
+To get the endpoint for the load balancer
+
+`$ kubectl get svc`
+
+![](./images/lbs.PNG)
+![](./images/lbs2.PNG)
+
+Access the nginx from the browser
+
+![](./images/ilk.PNG)
+
+To get information about the __nginx-service__
+
+`$ kubectl describe svc nginx-service`
+
+OR
+
+`$ kubectl get svc nginx-service -o yaml`
+
+![](./images/89.PNG)
+
+A clusterIP key is updated in the manifest and assigned an IP address. Even though you have specified a Loadbalancer service type, internally it still requires a clusterIP to route the external traffic through.
+In the ports section, nodePort is still used. This is because Kubernetes still needs to use a dedicated port on the worker node to route the traffic through. Ensure that port range 30000-32767 is opened in your inbound Security Group configuration.
+
+Delete the replicaset and the nginx service
+
+`$ kubectl delete rs nginx-rs`
+
+`$ kubectl delete svc nginx-service`
+
+__USING DEPLOYMENT CONTROLLERS__
+
+A __Deployment__ is another layer above ReplicaSets and Pods, newer and more advanced level concept than ReplicaSets. It manages the deployment of ReplicaSets and allows for easy updating of a ReplicaSet as well as the ability to roll back to a previous version of deployment. It is declarative and can be used for rolling updates of micro-services, ensuring there is no downtime.
+
+Officially, it is highly recommended to use __Deployments__ to manage replica sets rather than using __replica sets__ directly.
+
+Create a __deploy.yml__ manifest
+
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deploy
+  labels:
+    tier: frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 8
+```
+
+Create the deployment
+
+`$ kubectl apply -f deploy.yaml`
+
+Get the deployment
+
+`$ kubectl get deploy`
+
+Get the replicaset
+
+`$ kubectl get rs`
+
+Get the pods
+
+`$ kubectl get pods`
+
+![](./images/234.PNG)
+
+From the above we will find that one f the pods is pending. To get information about the pod
+
+`$ kubectl describe pod <pod-id>`
+
+![](./images/events.PNG)
+
+The __Event__ will help us with the problem with the pod.
+
+The warning indicates that there are no available nodes to schedule your pod because all nodes are occupied because I used __t2.micro__ to create the clsuter. 
+
+Some of the ways to resolve this include:
+
+- Add more nodes to your cluster.
+- Adjust resource requests and limits.
+- Prioritize pods.
+- Use PodDisruptionBudgets.
+- Scale down or remove unnecessary pods.
+
+I had to update the depoy.yml file to scale down the replicaset to 2.
+
+Connect into one of the Pods' container to run Linux commands
+
+`$ kubectl exec -it nginx-deploy-7d476d754d-fcd55 /bin/bash`
+
+List the files and folders in the Nginx directory
+
+`# ls -latr /etc/nginx`
+
+We can access the content of the __default.conf__
+
+`# cat /etc/nginx/conf.d/default.conf`
+
+![](./images/90.PNG)
+
+Create the __nginxlb-svc.yml__ service and access the nignx from the browser using the loadbalancer endpoint.
+
+![](./images/ilk.PNG)
+
+The set up looks like this
+
+![](./images/pix.PNG)
+
+__PERSISTING DATA FOR PODS__
+
+Deployments are stateless by design. Hence, any data stored inside the Pod’s container does not persist when the Pod dies.
+
+If you were to update the content of the __index.html__ file inside the container, and the Pod dies, that content will not be lost since a new Pod will replace the dead one.
+
+To see this in action, scale down the pods from 2 to 1
+
+`$ kubectl scale deployment nginx-deploy --replicas=1`
+
+![](./images/sc.PNG)
+
+Connect into the pod and install __vim__
+
+`$ kubectl exec -itnginx-deploy-7d476d754d-fcd55 /bin/bash`
+
+`# apt update && apt install vim -y`
+
+![](./images/nn.PNG)
+
+Update the content of the file and add the code below __/usr/share/nginx/html/index.html__
+
+`$ vim /usr/share/nginx/html/index.html`
+
+```
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to Solomon's Page!</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>Welcome to Solomon's Page!</h1>
+<p>Learning by doing is so much fun</p>
+
+<p>Project Based learning at 
+<a href="https://darey.io/">www.darey.io</a>.<br/>
+Start your Learning today at
+<a href="https://darey.io/">www.darey.io</a>.</p>
+
+<p><em>Thanks</em></p>
+</body>
+</html>
+```
+![](./images/index.PNG)
+
+Reload the browser to see the changes made
+
+![](./images/red.PNG)
+
+Now, delete the only running Pod
+
+`$ kubectl delete pod nginx-deploy-7d476d754d-fcd55`
+
+We will see that the replicaset creates another pod with a different pod ID.
+
+Refresh the web page
+
+![](./images/ilk.PNG)
+
+You will see that the content that was saved in the container is no longer there. That is because Pods do not store data when they are being recreated – that is why they are called __ephemeral__ or __stateless__.
+
+Storage is a critical part of running containers, and Kubernetes offers some powerful primitives for managing it. Dynamic volume provisioning, a feature unique to Kubernetes, which allows storage volumes to be created on-demand. Without dynamic provisioning, DevOps engineers must manually make calls to the cloud or storage provider to create new storage volumes, and then create PersistentVolume objects to represent them in Kubernetes. The dynamic provisioning feature eliminates the need for DevOps to pre-provision storage. Instead, it automatically provisions storage when it is requested by users.
+
+To make the data persist in case of a Pod’s failure, you will need to configure the Pod to use following objects:
+
+- __Persistent Volume or pv__ – is a piece of storage in the cluster that has been provisioned by an administrator or dynamically provisioned using Storage Classes.
+- __Persistent Volume Claim or pvc__. Persistent Volume Claim is simply a request for storage, hence the "claim" in its name.
 
 
+In the next project,
 
-
-
-
-
-
-
-
-
-
+- I will use Terraform to create a Kubernetes EKS cluster in AWS, and use some powerful features such as __PV, PVCs, ConfigMaps__.
+-I will also be packaging Kubernetes manifests using Helm
+- Dynamic provisioning of volumes to make Pods __stateful__, using Kubernetes __Statefulset__
+- Deploying applications into Kubernetes using Helm Charts
+And many more awesome technologies.
 
 __PROBLEMS ENCOUNTERED__
 
-Could not connect to the kubernetes api server using
+Could not connect the __kubectl__ to the kubernetes api server using
 
 `aws eks --region us-east-1 update-kubeconfig --name deploy`. 
 
